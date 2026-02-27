@@ -1,0 +1,98 @@
+# ============================================================
+#  SatuBooster Telephony — Full Stack Docker Compose
+# ============================================================
+#  Brings up:
+#    1. FreePBX + Asterisk  (PBX engine)
+#    2. Our REST API         (Node.js bridge)
+#
+#  Usage:
+#    docker-compose up -d          # Start everything
+#    docker-compose logs -f api    # Watch API logs
+#    docker-compose down           # Stop everything
+#
+#  First-time setup:
+#    1. Copy .env.example to .env and fill in real values
+#    2. Run: docker-compose up -d
+#    3. Access FreePBX admin UI at http://your-server-ip:8080
+#    4. API available at http://your-server-ip:3000
+# ============================================================
+
+version: "3.8"
+
+services:
+  # ── FreePBX + Asterisk ─────────────────────────────────────
+  freepbx:
+    image: tiredofit/freepbx:latest
+    container_name: satubooster-freepbx
+    restart: unless-stopped
+    ports:
+      - "8080:80"             # FreePBX Admin Web UI
+      - "5060:5060/udp"       # SIP UDP
+      - "5060:5060/tcp"       # SIP TCP
+      - "5061:5061/tcp"       # SIP TLS
+      - "10000-10100:10000-10100/udp"  # RTP audio (narrowed range for Docker)
+    volumes:
+      - freepbx_data:/var/lib/asterisk
+      - freepbx_logs:/var/log/asterisk
+      - freepbx_db:/var/lib/mysql
+      - recordings:/var/spool/asterisk/monitor     # Call recordings
+    environment:
+      - DB_HOST=localhost
+      - DB_NAME=asterisk
+      - DB_USER=asterisk
+      - DB_PASS=${FREEPBX_DB_PASSWORD:-changeme}
+      - ENABLE_FAIL2BAN=TRUE
+      - TZ=${TZ:-Asia/Kolkata}
+    networks:
+      - telephony
+    healthcheck:
+      test: ["CMD", "asterisk", "-rx", "core show version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s      # FreePBX takes a while to boot
+
+  # ── Our REST API (Node.js) ─────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: satubooster-telephony-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      # Override AMI host to point to FreePBX container
+      - AMI_HOST=freepbx
+      - AMI_PORT=5038
+      # Recordings volume shared with FreePBX
+      - ASTERISK_RECORDINGS_PATH=/recordings
+    volumes:
+      - recordings:/recordings:ro    # Read-only access to recordings
+      - api_logs:/app/logs
+    depends_on:
+      freepbx:
+        condition: service_healthy
+    networks:
+      - telephony
+
+# ── Shared volumes ─────────────────────────────────────────────
+volumes:
+  freepbx_data:
+    driver: local
+  freepbx_logs:
+    driver: local
+  freepbx_db:
+    driver: local
+  recordings:
+    driver: local
+  api_logs:
+    driver: local
+
+# ── Internal network ──────────────────────────────────────────
+networks:
+  telephony:
+    driver: bridge

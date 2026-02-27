@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Environment files (sensitive data)
+.env
+.env.local
+.env.production
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Documentation (not needed in image)
+plan.md
+README.md
+
+# Tests (not needed in production image)
+test.js

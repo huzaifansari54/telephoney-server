@@ -1,0 +1,40 @@
+{
+  "name": "satubooster-telephony-server",
+  "version": "1.0.0",
+  "description": "Self-hosted telephony REST API bridge for SatuBooster CRM — replaces OnlinePBX with FreePBX/Asterisk",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "lint": "eslint src/**/*.js"
+  },
+  "keywords": [
+    "telephony",
+    "asterisk",
+    "freepbx",
+    "voip",
+    "crm",
+    "ami"
+  ],
+  "author": "SatuBooster",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "asterisk-ami-client": "^1.1.5",
+    "axios": "^1.6.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
